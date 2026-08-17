@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>West Seattle Restaurant Quest</title>
+<style>
+:root{--bg:#f5efe4;--paper:#fffdf8;--ink:#24211d;--muted:#756d63;--line:#ded4c5;--rust:#b75c3b;--green:#3e6b5f;--sage:#dfe9e3;--sand:#eee3d3;--gold:#d58b2c;--shadow:0 8px 26px rgba(58,45,30,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header,main{max-width:1180px;margin:auto;padding-left:20px;padding-right:20px}header{padding-top:36px;padding-bottom:18px}
+.kicker{font-size:.75rem;text-transform:uppercase;letter-spacing:.15em;font-weight:850;color:var(--rust)}h1{font-size:clamp(2.2rem,5vw,4.1rem);line-height:.96;margin:.4rem 0 .7rem;letter-spacing:-.04em}
+.sub{color:var(--muted);line-height:1.55;max-width:760px}main{padding-bottom:50px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0 16px}.stat{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}.stat b{display:block;font-size:1.55rem}.stat span{font-size:.78rem;color:var(--muted)}
+.filterbox{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:13px;box-shadow:var(--shadow)}.filters{display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:8px}
+input,select,textarea,button{font:inherit}input[type=search],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff;color:var(--ink)}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
+button{border:0;border-radius:10px;padding:9px 12px;background:var(--ink);color:#fff;font-weight:750;cursor:pointer}button.secondary{background:var(--sand);color:var(--ink)}#showing{margin-left:auto;color:var(--muted);font-size:.85rem;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:15px;box-shadow:var(--shadow)}.card.visited{border-color:#a8c1b9;background:#fbfffc}.card.hidden{display:none}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.name{font-weight:850;font-size:1.06rem}.status{font-size:.7rem;font-weight:850;padding:5px 8px;border-radius:99px;background:var(--sand);color:var(--muted);white-space:nowrap}.status.yes{background:var(--sage);color:#2e5c50}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.tag{font-size:.72rem;padding:5px 8px;border-radius:99px}.hood{background:#e5ece9;color:#386155}.cuisine{background:#f4e6dd;color:#854c36}
+.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px}.visit{display:flex;gap:6px;align-items:center;font-size:.87rem;font-weight:750} .stars{display:inline-flex;flex-direction:row-reverse;justify-content:flex-end;gap:0}
+.stars input{position:absolute;opacity:0;pointer-events:none}
+.stars label{color:#c8b8a7;padding:4px 5px;font-size:1.7rem;line-height:1;min-width:34px;min-height:34px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.stars input:checked ~ label{color:var(--gold)}.note-btn{background:transparent;color:var(--green);padding:3px 0;margin-left:auto}
+.notes{display:none;margin-top:9px}.notes.open{display:block}.notes textarea{width:100%;min-height:78px;border:1px solid var(--line);border-radius:10px;padding:10px;background:white;resize:vertical}
+.notice{margin-top:18px;padding:13px 15px;border-radius:15px;background:#ede3d6;color:#655c53;font-size:.84rem;line-height:1.45}.empty{display:none;text-align:center;padding:40px;color:var(--muted)}
+@media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.filters input{grid-column:1/-1}.grid{grid-template-columns:1fr}}
+@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr}.filters input{grid-column:auto}#showing{width:100%;margin-left:0}}
+</style>
+</head>
+<body>
+<header><div class="kicker">A West Seattle food adventure</div><h1>Restaurant Quest</h1><div class="sub">Filter by neighborhood or cuisine, rate your favorites, and keep track of everywhere you've eaten.</div></header>
+<main>
+<section class="stats">
+<div class="stat"><b id="statTotal">80</b><span>restaurants</span></div>
+<div class="stat"><b id="statVisited">0</b><span>visited</span></div>
+<div class="stat"><b id="statLeft">80</b><span>still to try</span></div>
+<div class="stat"><b id="statAverage">—</b><span>average rating</span></div>
+</section>
+<section class="filterbox">
+<div class="filters">
+<input id="searchInput" type="search" placeholder="Search restaurants or notes…">
+<select id="hoodFilter"><option value="">All neighborhoods</option><option value="Admiral">Admiral</option><option value="Alaska Junction">Alaska Junction</option><option value="Alki">Alki</option><option value="Genesee">Genesee</option><option value="High Point">High Point</option><option value="Morgan Junction">Morgan Junction</option><option value="North Delridge">North Delridge</option><option value="Roxhill">Roxhill</option><option value="South Delridge">South Delridge</option><option value="Westwood">Westwood</option></select>
+<select id="cuisineFilter"><option value="">All cuisines</option><option value="American / Bar Food">American / Bar Food</option><option value="American / Breakfast">American / Breakfast</option><option value="American / Diner">American / Diner</option><option value="American / Pub">American / Pub</option><option value="American / Sports Bar">American / Sports Bar</option><option value="Asian / Dumplings">Asian / Dumplings</option><option value="Barbecue">Barbecue</option><option value="Barbecue / New American">Barbecue / New American</option><option value="Burgers">Burgers</option><option value="Burgers / Casual American">Burgers / Casual American</option><option value="Chinese">Chinese</option><option value="Deli / Sandwiches">Deli / Sandwiches</option><option value="Fried Chicken / Hawaiian">Fried Chicken / Hawaiian</option><option value="Greek / Mediterranean">Greek / Mediterranean</option><option value="Hawaiian / Korean Fusion">Hawaiian / Korean Fusion</option><option value="Indian">Indian</option><option value="Indian Fusion">Indian Fusion</option><option value="Italian">Italian</option><option value="Italian / Pasta">Italian / Pasta</option><option value="Italian / Pizza">Italian / Pizza</option><option value="Japanese / Ramen">Japanese / Ramen</option><option value="Japanese / Sushi">Japanese / Sushi</option><option value="Korean BBQ">Korean BBQ</option><option value="Mediterranean / Pizza">Mediterranean / Pizza</option><option value="Mexican">Mexican</option><option value="Mexican / Fast Casual">Mexican / Fast Casual</option><option value="Mexican / Southwestern">Mexican / Southwestern</option><option value="Mexican / Tex-Mex">Mexican / Tex-Mex</option><option value="Middle Eastern / Mediterranean">Middle Eastern / Mediterranean</option><option value="Moroccan / Spanish Tapas">Moroccan / Spanish Tapas</option><option value="Native American / Southwestern">Native American / Southwestern</option><option value="New American">New American</option><option value="New American / Bar">New American / Bar</option><option value="New American / Brunch">New American / Brunch</option><option value="New American / Pub">New American / Pub</option><option value="Pizza">Pizza</option><option value="Pizza / Bar">Pizza / Bar</option><option value="Pizza / Italian">Pizza / Italian</option><option value="Seafood">Seafood</option><option value="Seafood / Pacific Northwest">Seafood / Pacific Northwest</option><option value="Teriyaki / Japanese">Teriyaki / Japanese</option><option value="Thai">Thai</option><option value="Vietnamese">Vietnamese</option></select>
+<select id="statusFilter"><option value="">Visited + unvisited</option><option value="visited">Visited</option><option value="unvisited">Not visited</option><option value="rated">Rated</option><option value="unrated">Not rated</option></select>
+<select id="sortFilter"><option value="az">A–Z</option><option value="za">Z–A</option><option value="rating">Highest rated</option><option value="unvisited">Unvisited first</option><option value="visited">Visited first</option></select>
+</div>
+<div class="actions"><button type="button" id="clearBtn" class="secondary">Clear filters</button><button type="button" id="exportBtn" class="secondary">Export backup</button><button type="button" id="importBtn" class="secondary">Import backup</button><input id="fileInput" type="file" accept=".json,application/json" hidden><span id="showing">Showing 80 of 80</span></div>
+</section>
+<div id="emptyState" class="empty">Nothing matches those filters.</div>
+<section id="restaurantGrid" class="grid">
+<article class="card" data-card-id="0" data-name="a pizza mart" data-cuisine="Pizza" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">A Pizza Mart</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-0-5" name="rating-0" value="5"><label for="rating-0-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-0-4" name="rating-0" value="4"><label for="rating-0-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-0-3" name="rating-0" value="3"><label for="rating-0-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-0-2" name="rating-0" value="2"><label for="rating-0-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-0-1" name="rating-0" value="1"><label for="rating-0-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="1" data-name="alki pho &amp; bar" data-cuisine="Vietnamese" data-neighborhood="Alki">
+  <div class="top"><div class="name">Alki Pho &amp; Bar</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Vietnamese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-1-5" name="rating-1" value="5"><label for="rating-1-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-1-4" name="rating-1" value="4"><label for="rating-1-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-1-3" name="rating-1" value="3"><label for="rating-1-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-1-2" name="rating-1" value="2"><label for="rating-1-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-1-1" name="rating-1" value="1"><label for="rating-1-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="2" data-name="alki spud fish &amp; chips" data-cuisine="Seafood" data-neighborhood="Alki">
+  <div class="top"><div class="name">Alki Spud Fish &amp; Chips</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Seafood</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-2-5" name="rating-2" value="5"><label for="rating-2-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-2-4" name="rating-2" value="4"><label for="rating-2-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-2-3" name="rating-2" value="3"><label for="rating-2-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-2-2" name="rating-2" value="2"><label for="rating-2-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-2-1" name="rating-2" value="1"><label for="rating-2-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="3" data-name="arthur&#x27;s" data-cuisine="New American / Brunch" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Arthur&#x27;s</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">New American / Brunch</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-3-5" name="rating-3" value="5"><label for="rating-3-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-3-4" name="rating-3" value="4"><label for="rating-3-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-3-3" name="rating-3" value="3"><label for="rating-3-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-3-2" name="rating-3" value="2"><label for="rating-3-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-3-1" name="rating-3" value="1"><label for="rating-3-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="4" data-name="azuma sushi" data-cuisine="Japanese / Sushi" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Azuma Sushi</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Japanese / Sushi</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-4-5" name="rating-4" value="5"><label for="rating-4-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-4-4" name="rating-4" value="4"><label for="rating-4-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-4-3" name="rating-4" value="3"><label for="rating-4-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-4-2" name="rating-4" value="2"><label for="rating-4-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-4-1" name="rating-4" value="1"><label for="rating-4-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="5" data-name="bang bar thai" data-cuisine="Thai" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Bang Bar Thai</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Thai</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-5-5" name="rating-5" value="5"><label for="rating-5-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-5-4" name="rating-5" value="4"><label for="rating-5-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-5-3" name="rating-5" value="3"><label for="rating-5-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-5-2" name="rating-5" value="2"><label for="rating-5-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-5-1" name="rating-5" value="1"><label for="rating-5-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="6" data-name="big mario&#x27;s pizza" data-cuisine="Pizza" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Big Mario&#x27;s Pizza</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-6-5" name="rating-6" value="5"><label for="rating-6-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-6-4" name="rating-6" value="4"><label for="rating-6-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-6-3" name="rating-6" value="3"><label for="rating-6-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-6-2" name="rating-6" value="2"><label for="rating-6-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-6-1" name="rating-6" value="1"><label for="rating-6-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="7" data-name="buddha ruksa" data-cuisine="Thai" data-neighborhood="Genesee">
+  <div class="top"><div class="name">Buddha Ruksa</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Genesee</span><span class="tag cuisine">Thai</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-7-5" name="rating-7" value="5"><label for="rating-7-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-7-4" name="rating-7" value="4"><label for="rating-7-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-7-3" name="rating-7" value="3"><label for="rating-7-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-7-2" name="rating-7" value="2"><label for="rating-7-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-7-1" name="rating-7" value="1"><label for="rating-7-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="8" data-name="cactus alki beach" data-cuisine="Mexican / Southwestern" data-neighborhood="Alki">
+  <div class="top"><div class="name">Cactus Alki Beach</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Mexican / Southwestern</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-8-5" name="rating-8" value="5"><label for="rating-8-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-8-4" name="rating-8" value="4"><label for="rating-8-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-8-3" name="rating-8" value="3"><label for="rating-8-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-8-2" name="rating-8" value="2"><label for="rating-8-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-8-1" name="rating-8" value="1"><label for="rating-8-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="9" data-name="camp west" data-cuisine="New American / Pub" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Camp West</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">New American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-9-5" name="rating-9" value="5"><label for="rating-9-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-9-4" name="rating-9" value="4"><label for="rating-9-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-9-3" name="rating-9" value="3"><label for="rating-9-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-9-2" name="rating-9" value="2"><label for="rating-9-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-9-1" name="rating-9" value="1"><label for="rating-9-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="10" data-name="can bar" data-cuisine="American / Pub" data-neighborhood="South Delridge">
+  <div class="top"><div class="name">Can Bar</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">South Delridge</span><span class="tag cuisine">American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-10-5" name="rating-10" value="5"><label for="rating-10-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-10-4" name="rating-10" value="4"><label for="rating-10-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-10-3" name="rating-10" value="3"><label for="rating-10-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-10-2" name="rating-10" value="2"><label for="rating-10-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-10-1" name="rating-10" value="1"><label for="rating-10-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="11" data-name="chelan cafe" data-cuisine="American / Diner" data-neighborhood="North Delridge">
+  <div class="top"><div class="name">Chelan Cafe</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">North Delridge</span><span class="tag cuisine">American / Diner</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-11-5" name="rating-11" value="5"><label for="rating-11-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-11-4" name="rating-11" value="4"><label for="rating-11-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-11-3" name="rating-11" value="3"><label for="rating-11-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-11-2" name="rating-11" value="2"><label for="rating-11-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-11-1" name="rating-11" value="1"><label for="rating-11-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="12" data-name="chipotle mexican grill" data-cuisine="Mexican" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Chipotle Mexican Grill</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Mexican</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-12-5" name="rating-12" value="5"><label for="rating-12-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-12-4" name="rating-12" value="4"><label for="rating-12-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-12-3" name="rating-12" value="3"><label for="rating-12-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-12-2" name="rating-12" value="2"><label for="rating-12-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-12-1" name="rating-12" value="1"><label for="rating-12-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="13" data-name="circa" data-cuisine="New American / Pub" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Circa</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">New American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-13-5" name="rating-13" value="5"><label for="rating-13-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-13-4" name="rating-13" value="4"><label for="rating-13-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-13-3" name="rating-13" value="3"><label for="rating-13-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-13-2" name="rating-13" value="2"><label for="rating-13-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-13-1" name="rating-13" value="1"><label for="rating-13-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="14" data-name="coastline burgers west seattle" data-cuisine="Burgers" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Coastline Burgers West Seattle</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Burgers</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-14-5" name="rating-14" value="5"><label for="rating-14-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-14-4" name="rating-14" value="4"><label for="rating-14-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-14-3" name="rating-14" value="3"><label for="rating-14-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-14-2" name="rating-14" value="2"><label for="rating-14-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-14-1" name="rating-14" value="1"><label for="rating-14-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="15" data-name="do si korean bbq" data-cuisine="Korean BBQ" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Do Si Korean BBQ</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Korean BBQ</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-15-5" name="rating-15" value="5"><label for="rating-15-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-15-4" name="rating-15" value="4"><label for="rating-15-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-15-3" name="rating-15" value="3"><label for="rating-15-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-15-2" name="rating-15" value="2"><label for="rating-15-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-15-1" name="rating-15" value="1"><label for="rating-15-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="16" data-name="duke&#x27;s seafood" data-cuisine="Seafood" data-neighborhood="Alki">
+  <div class="top"><div class="name">Duke&#x27;s Seafood</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Seafood</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-16-5" name="rating-16" value="5"><label for="rating-16-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-16-4" name="rating-16" value="4"><label for="rating-16-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-16-3" name="rating-16" value="3"><label for="rating-16-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-16-2" name="rating-16" value="2"><label for="rating-16-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-16-1" name="rating-16" value="1"><label for="rating-16-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="17" data-name="dumplings of fury" data-cuisine="Asian / Dumplings" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Dumplings of Fury</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Asian / Dumplings</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-17-5" name="rating-17" value="5"><label for="rating-17-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-17-4" name="rating-17" value="4"><label for="rating-17-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-17-3" name="rating-17" value="3"><label for="rating-17-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-17-2" name="rating-17" value="2"><label for="rating-17-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-17-1" name="rating-17" value="1"><label for="rating-17-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="18" data-name="due&#x27; cucina" data-cuisine="Italian / Pasta" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Due&#x27; Cucina</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Italian / Pasta</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-18-5" name="rating-18" value="5"><label for="rating-18-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-18-4" name="rating-18" value="4"><label for="rating-18-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-18-3" name="rating-18" value="3"><label for="rating-18-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-18-2" name="rating-18" value="2"><label for="rating-18-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-18-1" name="rating-18" value="1"><label for="rating-18-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="19" data-name="easy street records &amp; cafe" data-cuisine="American / Breakfast" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Easy Street Records &amp; Cafe</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">American / Breakfast</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-19-5" name="rating-19" value="5"><label for="rating-19-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-19-4" name="rating-19" value="4"><label for="rating-19-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-19-3" name="rating-19" value="3"><label for="rating-19-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-19-2" name="rating-19" value="2"><label for="rating-19-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-19-1" name="rating-19" value="1"><label for="rating-19-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="20" data-name="el chupacabra" data-cuisine="Mexican" data-neighborhood="Alki">
+  <div class="top"><div class="name">El Chupacabra</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Mexican</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-20-5" name="rating-20" value="5"><label for="rating-20-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-20-4" name="rating-20" value="4"><label for="rating-20-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-20-3" name="rating-20" value="3"><label for="rating-20-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-20-2" name="rating-20" value="2"><label for="rating-20-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-20-1" name="rating-20" value="1"><label for="rating-20-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="21" data-name="elliott bay brewing - west seattle" data-cuisine="American / Pub" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Elliott Bay Brewing - West Seattle</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-21-5" name="rating-21" value="5"><label for="rating-21-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-21-4" name="rating-21" value="4"><label for="rating-21-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-21-3" name="rating-21" value="3"><label for="rating-21-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-21-2" name="rating-21" value="2"><label for="rating-21-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-21-1" name="rating-21" value="1"><label for="rating-21-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="22" data-name="falafel salam" data-cuisine="Middle Eastern / Mediterranean" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Falafel Salam</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Middle Eastern / Mediterranean</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-22-5" name="rating-22" value="5"><label for="rating-22-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-22-4" name="rating-22" value="4"><label for="rating-22-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-22-3" name="rating-22" value="3"><label for="rating-22-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-22-2" name="rating-22" value="2"><label for="rating-22-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-22-1" name="rating-22" value="1"><label for="rating-22-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="23" data-name="grillbird" data-cuisine="Teriyaki / Japanese" data-neighborhood="High Point">
+  <div class="top"><div class="name">Grillbird</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">High Point</span><span class="tag cuisine">Teriyaki / Japanese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-23-5" name="rating-23" value="5"><label for="rating-23-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-23-4" name="rating-23" value="4"><label for="rating-23-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-23-3" name="rating-23" value="3"><label for="rating-23-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-23-2" name="rating-23" value="2"><label for="rating-23-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-23-1" name="rating-23" value="1"><label for="rating-23-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="24" data-name="gyros heroes" data-cuisine="Greek / Mediterranean" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Gyros Heroes</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Greek / Mediterranean</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-24-5" name="rating-24" value="5"><label for="rating-24-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-24-4" name="rating-24" value="4"><label for="rating-24-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-24-3" name="rating-24" value="3"><label for="rating-24-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-24-2" name="rating-24" value="2"><label for="rating-24-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-24-1" name="rating-24" value="1"><label for="rating-24-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="25" data-name="gyros on alki" data-cuisine="Greek / Mediterranean" data-neighborhood="Alki">
+  <div class="top"><div class="name">Gyros on Alki</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Greek / Mediterranean</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-25-5" name="rating-25" value="5"><label for="rating-25-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-25-4" name="rating-25" value="4"><label for="rating-25-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-25-3" name="rating-25" value="3"><label for="rating-25-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-25-2" name="rating-25" value="2"><label for="rating-25-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-25-1" name="rating-25" value="1"><label for="rating-25-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="26" data-name="harry&#x27;s beach house" data-cuisine="New American" data-neighborhood="Alki">
+  <div class="top"><div class="name">Harry&#x27;s Beach House</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">New American</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-26-5" name="rating-26" value="5"><label for="rating-26-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-26-4" name="rating-26" value="4"><label for="rating-26-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-26-3" name="rating-26" value="3"><label for="rating-26-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-26-2" name="rating-26" value="2"><label for="rating-26-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-26-1" name="rating-26" value="1"><label for="rating-26-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="27" data-name="the home skillit bbq" data-cuisine="Barbecue" data-neighborhood="South Delridge">
+  <div class="top"><div class="name">The Home Skillit BBQ</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">South Delridge</span><span class="tag cuisine">Barbecue</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-27-5" name="rating-27" value="5"><label for="rating-27-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-27-4" name="rating-27" value="4"><label for="rating-27-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-27-3" name="rating-27" value="3"><label for="rating-27-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-27-2" name="rating-27" value="2"><label for="rating-27-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-27-1" name="rating-27" value="1"><label for="rating-27-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="28" data-name="husky deli" data-cuisine="Deli / Sandwiches" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Husky Deli</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Deli / Sandwiches</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-28-5" name="rating-28" value="5"><label for="rating-28-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-28-4" name="rating-28" value="4"><label for="rating-28-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-28-3" name="rating-28" value="3"><label for="rating-28-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-28-2" name="rating-28" value="2"><label for="rating-28-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-28-1" name="rating-28" value="1"><label for="rating-28-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="29" data-name="il nido" data-cuisine="Italian" data-neighborhood="Alki">
+  <div class="top"><div class="name">Il Nido</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Italian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-29-5" name="rating-29" value="5"><label for="rating-29-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-29-4" name="rating-29" value="4"><label for="rating-29-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-29-3" name="rating-29" value="3"><label for="rating-29-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-29-2" name="rating-29" value="2"><label for="rating-29-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-29-1" name="rating-29" value="1"><label for="rating-29-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="30" data-name="indofusion" data-cuisine="Indian Fusion" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">IndoFusion</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Indian Fusion</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-30-5" name="rating-30" value="5"><label for="rating-30-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-30-4" name="rating-30" value="4"><label for="rating-30-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-30-3" name="rating-30" value="3"><label for="rating-30-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-30-2" name="rating-30" value="2"><label for="rating-30-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-30-1" name="rating-30" value="1"><label for="rating-30-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="31" data-name="in pizza we crust" data-cuisine="Pizza" data-neighborhood="Admiral">
+  <div class="top"><div class="name">In Pizza We Crust</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-31-5" name="rating-31" value="5"><label for="rating-31-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-31-4" name="rating-31" value="4"><label for="rating-31-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-31-3" name="rating-31" value="3"><label for="rating-31-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-31-2" name="rating-31" value="2"><label for="rating-31-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-31-1" name="rating-31" value="1"><label for="rating-31-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="32" data-name="irashai sushi" data-cuisine="Japanese / Sushi" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Irashai Sushi</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Japanese / Sushi</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-32-5" name="rating-32" value="5"><label for="rating-32-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-32-4" name="rating-32" value="4"><label for="rating-32-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-32-3" name="rating-32" value="3"><label for="rating-32-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-32-2" name="rating-32" value="2"><label for="rating-32-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-32-1" name="rating-32" value="1"><label for="rating-32-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="33" data-name="itto&#x27;s tapas" data-cuisine="Moroccan / Spanish Tapas" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Itto&#x27;s Tapas</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Moroccan / Spanish Tapas</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-33-5" name="rating-33" value="5"><label for="rating-33-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-33-4" name="rating-33" value="4"><label for="rating-33-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-33-3" name="rating-33" value="3"><label for="rating-33-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-33-2" name="rating-33" value="2"><label for="rating-33-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-33-1" name="rating-33" value="1"><label for="rating-33-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="34" data-name="kizuki ramen &amp; izakaya" data-cuisine="Japanese / Ramen" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Kizuki Ramen &amp; Izakaya</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Japanese / Ramen</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-34-5" name="rating-34" value="5"><label for="rating-34-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-34-4" name="rating-34" value="4"><label for="rating-34-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-34-3" name="rating-34" value="3"><label for="rating-34-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-34-2" name="rating-34" value="2"><label for="rating-34-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-34-1" name="rating-34" value="1"><label for="rating-34-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="35" data-name="kokoras greek grill" data-cuisine="Greek / Mediterranean" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Kokoras Greek Grill</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Greek / Mediterranean</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-35-5" name="rating-35" value="5"><label for="rating-35-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-35-4" name="rating-35" value="4"><label for="rating-35-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-35-3" name="rating-35" value="3"><label for="rating-35-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-35-2" name="rating-35" value="2"><label for="rating-35-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-35-1" name="rating-35" value="1"><label for="rating-35-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="36" data-name="la chingona mexican cuisine" data-cuisine="Mexican" data-neighborhood="Westwood">
+  <div class="top"><div class="name">La Chingona Mexican Cuisine</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Mexican</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-36-5" name="rating-36" value="5"><label for="rating-36-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-36-4" name="rating-36" value="4"><label for="rating-36-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-36-3" name="rating-36" value="3"><label for="rating-36-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-36-2" name="rating-36" value="2"><label for="rating-36-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-36-1" name="rating-36" value="1"><label for="rating-36-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="37" data-name="la rustica" data-cuisine="Italian" data-neighborhood="Alki">
+  <div class="top"><div class="name">La Rustica</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Italian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-37-5" name="rating-37" value="5"><label for="rating-37-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-37-4" name="rating-37" value="4"><label for="rating-37-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-37-3" name="rating-37" value="3"><label for="rating-37-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-37-2" name="rating-37" value="2"><label for="rating-37-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-37-1" name="rating-37" value="1"><label for="rating-37-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="38" data-name="lady jaye" data-cuisine="Barbecue / New American" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Lady Jaye</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Barbecue / New American</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-38-5" name="rating-38" value="5"><label for="rating-38-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-38-4" name="rating-38" value="4"><label for="rating-38-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-38-3" name="rating-38" value="3"><label for="rating-38-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-38-2" name="rating-38" value="2"><label for="rating-38-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-38-1" name="rating-38" value="1"><label for="rating-38-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="39" data-name="luciano&#x27;s pizza &amp; pasta" data-cuisine="Italian / Pizza" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Luciano&#x27;s Pizza &amp; Pasta</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Italian / Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-39-5" name="rating-39" value="5"><label for="rating-39-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-39-4" name="rating-39" value="4"><label for="rating-39-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-39-3" name="rating-39" value="3"><label for="rating-39-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-39-2" name="rating-39" value="2"><label for="rating-39-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-39-1" name="rating-39" value="1"><label for="rating-39-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="40" data-name="luna park cafe" data-cuisine="American / Diner" data-neighborhood="North Delridge">
+  <div class="top"><div class="name">Luna Park Cafe</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">North Delridge</span><span class="tag cuisine">American / Diner</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-40-5" name="rating-40" value="5"><label for="rating-40-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-40-4" name="rating-40" value="4"><label for="rating-40-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-40-3" name="rating-40" value="3"><label for="rating-40-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-40-2" name="rating-40" value="2"><label for="rating-40-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-40-1" name="rating-40" value="1"><label for="rating-40-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="41" data-name="ma&#x27;ono fried chicken" data-cuisine="Fried Chicken / Hawaiian" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Ma&#x27;ono Fried Chicken</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Fried Chicken / Hawaiian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-41-5" name="rating-41" value="5"><label for="rating-41-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-41-4" name="rating-41" value="4"><label for="rating-41-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-41-3" name="rating-41" value="3"><label for="rating-41-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-41-2" name="rating-41" value="2"><label for="rating-41-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-41-1" name="rating-41" value="1"><label for="rating-41-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="42" data-name="maharaja cuisine of india" data-cuisine="Indian" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Maharaja Cuisine of India</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Indian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-42-5" name="rating-42" value="5"><label for="rating-42-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-42-4" name="rating-42" value="4"><label for="rating-42-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-42-3" name="rating-42" value="3"><label for="rating-42-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-42-2" name="rating-42" value="2"><label for="rating-42-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-42-1" name="rating-42" value="1"><label for="rating-42-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="43" data-name="marination ma kai" data-cuisine="Hawaiian / Korean Fusion" data-neighborhood="Alki">
+  <div class="top"><div class="name">Marination Ma Kai</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Hawaiian / Korean Fusion</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-43-5" name="rating-43" value="5"><label for="rating-43-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-43-4" name="rating-43" value="4"><label for="rating-43-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-43-3" name="rating-43" value="3"><label for="rating-43-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-43-2" name="rating-43" value="2"><label for="rating-43-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-43-1" name="rating-43" value="1"><label for="rating-43-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="44" data-name="mashiko" data-cuisine="Japanese / Sushi" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Mashiko</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Japanese / Sushi</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-44-5" name="rating-44" value="5"><label for="rating-44-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-44-4" name="rating-44" value="4"><label for="rating-44-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-44-3" name="rating-44" value="3"><label for="rating-44-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-44-2" name="rating-44" value="2"><label for="rating-44-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-44-1" name="rating-44" value="1"><label for="rating-44-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="45" data-name="matador west seattle" data-cuisine="Mexican / Tex-Mex" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Matador West Seattle</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Mexican / Tex-Mex</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-45-5" name="rating-45" value="5"><label for="rating-45-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-45-4" name="rating-45" value="4"><label for="rating-45-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-45-3" name="rating-45" value="3"><label for="rating-45-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-45-2" name="rating-45" value="2"><label for="rating-45-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-45-1" name="rating-45" value="1"><label for="rating-45-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="46" data-name="mioposto" data-cuisine="Italian / Pizza" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Mioposto</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Italian / Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-46-5" name="rating-46" value="5"><label for="rating-46-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-46-4" name="rating-46" value="4"><label for="rating-46-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-46-3" name="rating-46" value="3"><label for="rating-46-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-46-2" name="rating-46" value="2"><label for="rating-46-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-46-1" name="rating-46" value="1"><label for="rating-46-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="47" data-name="mission cantina" data-cuisine="Mexican" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Mission Cantina</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Mexican</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-47-5" name="rating-47" value="5"><label for="rating-47-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-47-4" name="rating-47" value="4"><label for="rating-47-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-47-3" name="rating-47" value="3"><label for="rating-47-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-47-2" name="rating-47" value="2"><label for="rating-47-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-47-1" name="rating-47" value="1"><label for="rating-47-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="48" data-name="moto pizza" data-cuisine="Pizza" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Moto Pizza</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-48-5" name="rating-48" value="5"><label for="rating-48-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-48-4" name="rating-48" value="4"><label for="rating-48-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-48-3" name="rating-48" value="3"><label for="rating-48-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-48-2" name="rating-48" value="2"><label for="rating-48-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-48-1" name="rating-48" value="1"><label for="rating-48-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="49" data-name="nacho mama&#x27;s fry bread cafe" data-cuisine="Native American / Southwestern" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Nacho Mama&#x27;s Fry Bread Cafe</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Native American / Southwestern</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-49-5" name="rating-49" value="5"><label for="rating-49-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-49-4" name="rating-49" value="4"><label for="rating-49-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-49-3" name="rating-49" value="3"><label for="rating-49-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-49-2" name="rating-49" value="2"><label for="rating-49-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-49-1" name="rating-49" value="1"><label for="rating-49-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="50" data-name="new leaf bistro" data-cuisine="Vietnamese" data-neighborhood="Admiral">
+  <div class="top"><div class="name">New Leaf Bistro</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Vietnamese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-50-5" name="rating-50" value="5"><label for="rating-50-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-50-4" name="rating-50" value="4"><label for="rating-50-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-50-3" name="rating-50" value="3"><label for="rating-50-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-50-2" name="rating-50" value="2"><label for="rating-50-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-50-1" name="rating-50" value="1"><label for="rating-50-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="51" data-name="new luck toy" data-cuisine="Chinese" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">New Luck Toy</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Chinese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-51-5" name="rating-51" value="5"><label for="rating-51-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-51-4" name="rating-51" value="4"><label for="rating-51-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-51-3" name="rating-51" value="3"><label for="rating-51-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-51-2" name="rating-51" value="2"><label for="rating-51-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-51-1" name="rating-51" value="1"><label for="rating-51-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="52" data-name="nikko teriyaki" data-cuisine="Teriyaki / Japanese" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Nikko Teriyaki</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Teriyaki / Japanese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-52-5" name="rating-52" value="5"><label for="rating-52-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-52-4" name="rating-52" value="4"><label for="rating-52-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-52-3" name="rating-52" value="3"><label for="rating-52-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-52-2" name="rating-52" value="2"><label for="rating-52-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-52-1" name="rating-52" value="1"><label for="rating-52-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="53" data-name="pagliacci pizza" data-cuisine="Pizza" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Pagliacci Pizza</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-53-5" name="rating-53" value="5"><label for="rating-53-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-53-4" name="rating-53" value="4"><label for="rating-53-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-53-3" name="rating-53" value="3"><label for="rating-53-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-53-2" name="rating-53" value="2"><label for="rating-53-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-53-1" name="rating-53" value="1"><label for="rating-53-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="54" data-name="panda express" data-cuisine="Chinese" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Panda Express</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Chinese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-54-5" name="rating-54" value="5"><label for="rating-54-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-54-4" name="rating-54" value="4"><label for="rating-54-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-54-3" name="rating-54" value="3"><label for="rating-54-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-54-2" name="rating-54" value="2"><label for="rating-54-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-54-1" name="rating-54" value="1"><label for="rating-54-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="55" data-name="pegasus pizza &amp; pasta" data-cuisine="Italian / Pizza" data-neighborhood="Alki">
+  <div class="top"><div class="name">Pegasus Pizza &amp; Pasta</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Italian / Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-55-5" name="rating-55" value="5"><label for="rating-55-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-55-4" name="rating-55" value="4"><label for="rating-55-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-55-3" name="rating-55" value="3"><label for="rating-55-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-55-2" name="rating-55" value="2"><label for="rating-55-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-55-1" name="rating-55" value="1"><label for="rating-55-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="56" data-name="pepperdock restaurant" data-cuisine="Burgers / Casual American" data-neighborhood="Alki">
+  <div class="top"><div class="name">Pepperdock Restaurant</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Burgers / Casual American</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-56-5" name="rating-56" value="5"><label for="rating-56-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-56-4" name="rating-56" value="4"><label for="rating-56-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-56-3" name="rating-56" value="3"><label for="rating-56-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-56-2" name="rating-56" value="2"><label for="rating-56-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-56-1" name="rating-56" value="1"><label for="rating-56-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="57" data-name="phoenecia" data-cuisine="Mediterranean / Pizza" data-neighborhood="Alki">
+  <div class="top"><div class="name">Phoenecia</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Mediterranean / Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-57-5" name="rating-57" value="5"><label for="rating-57-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-57-4" name="rating-57" value="4"><label for="rating-57-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-57-3" name="rating-57" value="3"><label for="rating-57-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-57-2" name="rating-57" value="2"><label for="rating-57-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-57-1" name="rating-57" value="1"><label for="rating-57-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="58" data-name="pizzeria 22" data-cuisine="Pizza" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Pizzeria 22</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-58-5" name="rating-58" value="5"><label for="rating-58-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-58-4" name="rating-58" value="4"><label for="rating-58-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-58-3" name="rating-58" value="3"><label for="rating-58-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-58-2" name="rating-58" value="2"><label for="rating-58-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-58-1" name="rating-58" value="1"><label for="rating-58-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="59" data-name="raccolto" data-cuisine="Italian" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Raccolto</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Italian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-59-5" name="rating-59" value="5"><label for="rating-59-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-59-4" name="rating-59" value="4"><label for="rating-59-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-59-3" name="rating-59" value="3"><label for="rating-59-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-59-2" name="rating-59" value="2"><label for="rating-59-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-59-1" name="rating-59" value="1"><label for="rating-59-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="60" data-name="romano pizza &amp; pasta" data-cuisine="Italian / Pizza" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Romano Pizza &amp; Pasta</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Italian / Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-60-5" name="rating-60" value="5"><label for="rating-60-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-60-4" name="rating-60" value="4"><label for="rating-60-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-60-3" name="rating-60" value="3"><label for="rating-60-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-60-2" name="rating-60" value="2"><label for="rating-60-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-60-1" name="rating-60" value="1"><label for="rating-60-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="61" data-name="roxbury lanes restaurant" data-cuisine="American / Bar Food" data-neighborhood="Roxhill">
+  <div class="top"><div class="name">Roxbury Lanes Restaurant</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Roxhill</span><span class="tag cuisine">American / Bar Food</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-61-5" name="rating-61" value="5"><label for="rating-61-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-61-4" name="rating-61" value="4"><label for="rating-61-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-61-3" name="rating-61" value="3"><label for="rating-61-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-61-2" name="rating-61" value="2"><label for="rating-61-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-61-1" name="rating-61" value="1"><label for="rating-61-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="62" data-name="salty&#x27;s on alki beach" data-cuisine="Seafood / Pacific Northwest" data-neighborhood="Alki">
+  <div class="top"><div class="name">Salty&#x27;s on Alki Beach</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Seafood / Pacific Northwest</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-62-5" name="rating-62" value="5"><label for="rating-62-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-62-4" name="rating-62" value="4"><label for="rating-62-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-62-3" name="rating-62" value="3"><label for="rating-62-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-62-2" name="rating-62" value="2"><label for="rating-62-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-62-1" name="rating-62" value="1"><label for="rating-62-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="63" data-name="seattle fish company" data-cuisine="Seafood" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Seattle Fish Company</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Seafood</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-63-5" name="rating-63" value="5"><label for="rating-63-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-63-4" name="rating-63" value="4"><label for="rating-63-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-63-3" name="rating-63" value="3"><label for="rating-63-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-63-2" name="rating-63" value="2"><label for="rating-63-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-63-1" name="rating-63" value="1"><label for="rating-63-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="64" data-name="shadowland" data-cuisine="New American / Pub" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Shadowland</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">New American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-64-5" name="rating-64" value="5"><label for="rating-64-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-64-4" name="rating-64" value="4"><label for="rating-64-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-64-3" name="rating-64" value="3"><label for="rating-64-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-64-2" name="rating-64" value="2"><label for="rating-64-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-64-1" name="rating-64" value="1"><label for="rating-64-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="65" data-name="sopranos antico pizza &amp; pasta" data-cuisine="Italian / Pizza" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Sopranos Antico Pizza &amp; Pasta</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Italian / Pizza</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-65-5" name="rating-65" value="5"><label for="rating-65-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-65-4" name="rating-65" value="4"><label for="rating-65-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-65-3" name="rating-65" value="3"><label for="rating-65-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-65-2" name="rating-65" value="2"><label for="rating-65-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-65-1" name="rating-65" value="1"><label for="rating-65-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="66" data-name="spring house thai kitchen" data-cuisine="Thai" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Spring House Thai Kitchen</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Thai</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-66-5" name="rating-66" value="5"><label for="rating-66-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-66-4" name="rating-66" value="4"><label for="rating-66-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-66-3" name="rating-66" value="3"><label for="rating-66-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-66-2" name="rating-66" value="2"><label for="rating-66-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-66-1" name="rating-66" value="1"><label for="rating-66-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="67" data-name="srivilai thai cuisine" data-cuisine="Thai" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Srivilai Thai Cuisine</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Thai</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-67-5" name="rating-67" value="5"><label for="rating-67-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-67-4" name="rating-67" value="4"><label for="rating-67-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-67-3" name="rating-67" value="3"><label for="rating-67-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-67-2" name="rating-67" value="2"><label for="rating-67-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-67-1" name="rating-67" value="1"><label for="rating-67-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="68" data-name="supreme" data-cuisine="Pizza / Bar" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Supreme</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Pizza / Bar</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-68-5" name="rating-68" value="5"><label for="rating-68-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-68-4" name="rating-68" value="4"><label for="rating-68-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-68-3" name="rating-68" value="3"><label for="rating-68-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-68-2" name="rating-68" value="2"><label for="rating-68-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-68-1" name="rating-68" value="1"><label for="rating-68-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="69" data-name="sunfish" data-cuisine="Seafood" data-neighborhood="Alki">
+  <div class="top"><div class="name">Sunfish</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alki</span><span class="tag cuisine">Seafood</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-69-5" name="rating-69" value="5"><label for="rating-69-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-69-4" name="rating-69" value="4"><label for="rating-69-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-69-3" name="rating-69" value="3"><label for="rating-69-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-69-2" name="rating-69" value="2"><label for="rating-69-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-69-1" name="rating-69" value="1"><label for="rating-69-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="70" data-name="taco time nw" data-cuisine="Mexican / Fast Casual" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Taco Time NW</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Mexican / Fast Casual</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-70-5" name="rating-70" value="5"><label for="rating-70-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-70-4" name="rating-70" value="4"><label for="rating-70-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-70-3" name="rating-70" value="3"><label for="rating-70-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-70-2" name="rating-70" value="2"><label for="rating-70-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-70-1" name="rating-70" value="1"><label for="rating-70-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="71" data-name="talarico&#x27;s pizzeria" data-cuisine="Pizza / Italian" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Talarico&#x27;s Pizzeria</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Pizza / Italian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-71-5" name="rating-71" value="5"><label for="rating-71-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-71-4" name="rating-71" value="4"><label for="rating-71-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-71-3" name="rating-71" value="3"><label for="rating-71-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-71-2" name="rating-71" value="2"><label for="rating-71-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-71-1" name="rating-71" value="1"><label for="rating-71-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="72" data-name="taqueria guaymas" data-cuisine="Mexican" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">Taqueria Guaymas</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">Mexican</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-72-5" name="rating-72" value="5"><label for="rating-72-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-72-4" name="rating-72" value="4"><label for="rating-72-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-72-3" name="rating-72" value="3"><label for="rating-72-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-72-2" name="rating-72" value="2"><label for="rating-72-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-72-1" name="rating-72" value="1"><label for="rating-72-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="73" data-name="taste of mumbai" data-cuisine="Indian" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Taste of Mumbai</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Indian</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-73-5" name="rating-73" value="5"><label for="rating-73-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-73-4" name="rating-73" value="4"><label for="rating-73-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-73-3" name="rating-73" value="3"><label for="rating-73-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-73-2" name="rating-73" value="2"><label for="rating-73-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-73-1" name="rating-73" value="1"><label for="rating-73-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="74" data-name="thai u up" data-cuisine="Thai" data-neighborhood="Westwood">
+  <div class="top"><div class="name">Thai U Up</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">Thai</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-74-5" name="rating-74" value="5"><label for="rating-74-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-74-4" name="rating-74" value="4"><label for="rating-74-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-74-3" name="rating-74" value="3"><label for="rating-74-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-74-2" name="rating-74" value="2"><label for="rating-74-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-74-1" name="rating-74" value="1"><label for="rating-74-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="75" data-name="the bridge" data-cuisine="American / Pub" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">The Bridge</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-75-5" name="rating-75" value="5"><label for="rating-75-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-75-4" name="rating-75" value="4"><label for="rating-75-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-75-3" name="rating-75" value="3"><label for="rating-75-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-75-2" name="rating-75" value="2"><label for="rating-75-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-75-1" name="rating-75" value="1"><label for="rating-75-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="76" data-name="the neighborhood" data-cuisine="New American / Bar" data-neighborhood="Alaska Junction">
+  <div class="top"><div class="name">The Neighborhood</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Alaska Junction</span><span class="tag cuisine">New American / Bar</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-76-5" name="rating-76" value="5"><label for="rating-76-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-76-4" name="rating-76" value="4"><label for="rating-76-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-76-3" name="rating-76" value="3"><label for="rating-76-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-76-2" name="rating-76" value="2"><label for="rating-76-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-76-1" name="rating-76" value="1"><label for="rating-76-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="77" data-name="the westy sports &amp; spirits" data-cuisine="American / Sports Bar" data-neighborhood="Westwood">
+  <div class="top"><div class="name">The Westy Sports &amp; Spirits</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Westwood</span><span class="tag cuisine">American / Sports Bar</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-77-5" name="rating-77" value="5"><label for="rating-77-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-77-4" name="rating-77" value="4"><label for="rating-77-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-77-3" name="rating-77" value="3"><label for="rating-77-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-77-2" name="rating-77" value="2"><label for="rating-77-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-77-1" name="rating-77" value="1"><label for="rating-77-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="78" data-name="whisky west" data-cuisine="American / Pub" data-neighborhood="Morgan Junction">
+  <div class="top"><div class="name">Whisky West</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Morgan Junction</span><span class="tag cuisine">American / Pub</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-78-5" name="rating-78" value="5"><label for="rating-78-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-78-4" name="rating-78" value="4"><label for="rating-78-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-78-3" name="rating-78" value="3"><label for="rating-78-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-78-2" name="rating-78" value="2"><label for="rating-78-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-78-1" name="rating-78" value="1"><label for="rating-78-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article>
+<article class="card" data-card-id="79" data-name="yen wor village" data-cuisine="Chinese" data-neighborhood="Admiral">
+  <div class="top"><div class="name">Yen Wor Village</div><span class="status">To try</span></div>
+  <div class="tags"><span class="tag hood">Admiral</span><span class="tag cuisine">Chinese</span></div>
+  <div class="controls">
+    <label class="visit"><input type="checkbox" class="visited-box"> Visited</label>
+    <div class="stars" aria-label="Rating"><input class="rating-input" type="radio" id="rating-79-5" name="rating-79" value="5"><label for="rating-79-5" aria-label="5 stars">★</label><input class="rating-input" type="radio" id="rating-79-4" name="rating-79" value="4"><label for="rating-79-4" aria-label="4 stars">★</label><input class="rating-input" type="radio" id="rating-79-3" name="rating-79" value="3"><label for="rating-79-3" aria-label="3 stars">★</label><input class="rating-input" type="radio" id="rating-79-2" name="rating-79" value="2"><label for="rating-79-2" aria-label="2 stars">★</label><input class="rating-input" type="radio" id="rating-79-1" name="rating-79" value="1"><label for="rating-79-1" aria-label="1 stars">★</label></div>
+    <button type="button" class="note-btn">Add notes</button>
+  </div>
+  <div class="notes"><textarea placeholder="What did you order? Would you go back?"></textarea></div>
+</article></section>
+<div class="notice"><b>Important:</b> The restaurant list itself is built directly into this page, so all 80 restaurants should be visible even if your browser blocks scripts. Interactive filtering, ratings and notes require JavaScript. Your progress is saved locally on the device/browser where you use the app.</div>
+</main>
+<script>
+(function () {
+"use strict";
+const DATA = [{"id": 0, "name": "A Pizza Mart", "cuisine": "Pizza", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 1, "name": "Alki Pho & Bar", "cuisine": "Vietnamese", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 2, "name": "Alki Spud Fish & Chips", "cuisine": "Seafood", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 3, "name": "Arthur's", "cuisine": "New American / Brunch", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 4, "name": "Azuma Sushi", "cuisine": "Japanese / Sushi", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 5, "name": "Bang Bar Thai", "cuisine": "Thai", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 6, "name": "Big Mario's Pizza", "cuisine": "Pizza", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 7, "name": "Buddha Ruksa", "cuisine": "Thai", "neighborhood": "Genesee", "visited": false, "rating": 0, "notes": ""}, {"id": 8, "name": "Cactus Alki Beach", "cuisine": "Mexican / Southwestern", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 9, "name": "Camp West", "cuisine": "New American / Pub", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 10, "name": "Can Bar", "cuisine": "American / Pub", "neighborhood": "South Delridge", "visited": false, "rating": 0, "notes": ""}, {"id": 11, "name": "Chelan Cafe", "cuisine": "American / Diner", "neighborhood": "North Delridge", "visited": false, "rating": 0, "notes": ""}, {"id": 12, "name": "Chipotle Mexican Grill", "cuisine": "Mexican", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 13, "name": "Circa", "cuisine": "New American / Pub", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 14, "name": "Coastline Burgers West Seattle", "cuisine": "Burgers", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 15, "name": "Do Si Korean BBQ", "cuisine": "Korean BBQ", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 16, "name": "Duke's Seafood", "cuisine": "Seafood", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 17, "name": "Dumplings of Fury", "cuisine": "Asian / Dumplings", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 18, "name": "Due' Cucina", "cuisine": "Italian / Pasta", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 19, "name": "Easy Street Records & Cafe", "cuisine": "American / Breakfast", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 20, "name": "El Chupacabra", "cuisine": "Mexican", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 21, "name": "Elliott Bay Brewing - West Seattle", "cuisine": "American / Pub", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 22, "name": "Falafel Salam", "cuisine": "Middle Eastern / Mediterranean", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 23, "name": "Grillbird", "cuisine": "Teriyaki / Japanese", "neighborhood": "High Point", "visited": false, "rating": 0, "notes": ""}, {"id": 24, "name": "Gyros Heroes", "cuisine": "Greek / Mediterranean", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 25, "name": "Gyros on Alki", "cuisine": "Greek / Mediterranean", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 26, "name": "Harry's Beach House", "cuisine": "New American", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 27, "name": "The Home Skillit BBQ", "cuisine": "Barbecue", "neighborhood": "South Delridge", "visited": false, "rating": 0, "notes": ""}, {"id": 28, "name": "Husky Deli", "cuisine": "Deli / Sandwiches", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 29, "name": "Il Nido", "cuisine": "Italian", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 30, "name": "IndoFusion", "cuisine": "Indian Fusion", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 31, "name": "In Pizza We Crust", "cuisine": "Pizza", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 32, "name": "Irashai Sushi", "cuisine": "Japanese / Sushi", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 33, "name": "Itto's Tapas", "cuisine": "Moroccan / Spanish Tapas", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 34, "name": "Kizuki Ramen & Izakaya", "cuisine": "Japanese / Ramen", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 35, "name": "Kokoras Greek Grill", "cuisine": "Greek / Mediterranean", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 36, "name": "La Chingona Mexican Cuisine", "cuisine": "Mexican", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 37, "name": "La Rustica", "cuisine": "Italian", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 38, "name": "Lady Jaye", "cuisine": "Barbecue / New American", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 39, "name": "Luciano's Pizza & Pasta", "cuisine": "Italian / Pizza", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 40, "name": "Luna Park Cafe", "cuisine": "American / Diner", "neighborhood": "North Delridge", "visited": false, "rating": 0, "notes": ""}, {"id": 41, "name": "Ma'ono Fried Chicken", "cuisine": "Fried Chicken / Hawaiian", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 42, "name": "Maharaja Cuisine of India", "cuisine": "Indian", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 43, "name": "Marination Ma Kai", "cuisine": "Hawaiian / Korean Fusion", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 44, "name": "Mashiko", "cuisine": "Japanese / Sushi", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 45, "name": "Matador West Seattle", "cuisine": "Mexican / Tex-Mex", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 46, "name": "Mioposto", "cuisine": "Italian / Pizza", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 47, "name": "Mission Cantina", "cuisine": "Mexican", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 48, "name": "Moto Pizza", "cuisine": "Pizza", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 49, "name": "Nacho Mama's Fry Bread Cafe", "cuisine": "Native American / Southwestern", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 50, "name": "New Leaf Bistro", "cuisine": "Vietnamese", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 51, "name": "New Luck Toy", "cuisine": "Chinese", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 52, "name": "Nikko Teriyaki", "cuisine": "Teriyaki / Japanese", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 53, "name": "Pagliacci Pizza", "cuisine": "Pizza", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 54, "name": "Panda Express", "cuisine": "Chinese", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 55, "name": "Pegasus Pizza & Pasta", "cuisine": "Italian / Pizza", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 56, "name": "Pepperdock Restaurant", "cuisine": "Burgers / Casual American", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 57, "name": "Phoenecia", "cuisine": "Mediterranean / Pizza", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 58, "name": "Pizzeria 22", "cuisine": "Pizza", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 59, "name": "Raccolto", "cuisine": "Italian", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 60, "name": "Romano Pizza & Pasta", "cuisine": "Italian / Pizza", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 61, "name": "Roxbury Lanes Restaurant", "cuisine": "American / Bar Food", "neighborhood": "Roxhill", "visited": false, "rating": 0, "notes": ""}, {"id": 62, "name": "Salty's on Alki Beach", "cuisine": "Seafood / Pacific Northwest", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 63, "name": "Seattle Fish Company", "cuisine": "Seafood", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 64, "name": "Shadowland", "cuisine": "New American / Pub", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 65, "name": "Sopranos Antico Pizza & Pasta", "cuisine": "Italian / Pizza", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}, {"id": 66, "name": "Spring House Thai Kitchen", "cuisine": "Thai", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 67, "name": "Srivilai Thai Cuisine", "cuisine": "Thai", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 68, "name": "Supreme", "cuisine": "Pizza / Bar", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 69, "name": "Sunfish", "cuisine": "Seafood", "neighborhood": "Alki", "visited": false, "rating": 0, "notes": ""}, {"id": 70, "name": "Taco Time NW", "cuisine": "Mexican / Fast Casual", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 71, "name": "Talarico's Pizzeria", "cuisine": "Pizza / Italian", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 72, "name": "Taqueria Guaymas", "cuisine": "Mexican", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 73, "name": "Taste of Mumbai", "cuisine": "Indian", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 74, "name": "Thai U Up", "cuisine": "Thai", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 75, "name": "The Bridge", "cuisine": "American / Pub", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 76, "name": "The Neighborhood", "cuisine": "New American / Bar", "neighborhood": "Alaska Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 77, "name": "The Westy Sports & Spirits", "cuisine": "American / Sports Bar", "neighborhood": "Westwood", "visited": false, "rating": 0, "notes": ""}, {"id": 78, "name": "Whisky West", "cuisine": "American / Pub", "neighborhood": "Morgan Junction", "visited": false, "rating": 0, "notes": ""}, {"id": 79, "name": "Yen Wor Village", "cuisine": "Chinese", "neighborhood": "Admiral", "visited": false, "rating": 0, "notes": ""}];
+const STORAGE_KEY = "westSeattleRestaurantQuest_v3";
+const byId = (id) => document.getElementById(id);
+
+const els = {
+ search: byId("searchInput"),
+ hood: byId("hoodFilter"),
+ cuisine: byId("cuisineFilter"),
+ status: byId("statusFilter"),
+ sort: byId("sortFilter"),
+ grid: byId("restaurantGrid"),
+ empty: byId("emptyState"),
+ showing: byId("showing"),
+ total: byId("statTotal"),
+ visited: byId("statVisited"),
+ left: byId("statLeft"),
+ average: byId("statAverage"),
+ clear: byId("clearBtn"),
+ exportBtn: byId("exportBtn"),
+ importBtn: byId("importBtn"),
+ file: byId("fileInput")
+};
+
+let state = DATA.map(x => ({...x}));
+try {
+ const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+ if (Array.isArray(saved)) {
+   state = DATA.map(item => {
+     const s = saved.find(x => x && x.name === item.name);
+     return s ? {...item, visited:!!s.visited, rating:Number(s.rating)||0, notes:String(s.notes||"")} : item;
+   });
+ }
+} catch (_) {}
+
+function save() {
+ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+}
+
+function cardFor(id) {
+ return els.grid.querySelector('[data-card-id="' + id + '"]');
+}
+
+function syncCard(item) {
+ const card = cardFor(item.id);
+ if (!card) return;
+ card.classList.toggle("visited", item.visited);
+ const box = card.querySelector(".visited-box");
+ if (box) box.checked = item.visited;
+ const badge = card.querySelector(".status");
+ if (badge) {
+   badge.textContent = item.visited ? "Been there" : "To try";
+   badge.classList.toggle("yes", item.visited);
+ }
+ card.querySelectorAll(".rating-input").forEach(input => {
+   input.checked = Number(input.value) === item.rating;
+ });
+ const ta = card.querySelector("textarea");
+ if (ta && ta.value !== item.notes) ta.value = item.notes;
+ const noteBtn = card.querySelector(".note-btn");
+ if (noteBtn) noteBtn.textContent = item.notes ? "View notes" : "Add notes";
+}
+
+function updateStats() {
+ const visitedCount = state.filter(x => x.visited).length;
+ const ratings = state.filter(x => x.rating > 0).map(x => x.rating);
+ els.total.textContent = state.length;
+ els.visited.textContent = visitedCount;
+ els.left.textContent = state.length - visitedCount;
+ els.average.textContent = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) + " ★" : "—";
+}
+
+function applyFilters() {
+ const q = els.search.value.trim().toLowerCase();
+ const hood = els.hood.value;
+ const cuisine = els.cuisine.value;
+ const status = els.status.value;
+ const sort = els.sort.value;
+
+ let filtered = state.filter(item => {
+   const hay = (item.name + " " + item.cuisine + " " + item.neighborhood + " " + item.notes).toLowerCase();
+   if (q && !hay.includes(q)) return false;
+   if (hood && item.neighborhood !== hood) return false;
+   if (cuisine && item.cuisine !== cuisine) return false;
+   if (status === "visited" && !item.visited) return false;
+   if (status === "unvisited" && item.visited) return false;
+   if (status === "rated" && !item.rating) return false;
+   if (status === "unrated" && item.rating) return false;
+   return true;
+ });
+
+ filtered.sort((a,b) => {
+   if (sort === "za") return b.name.localeCompare(a.name);
+   if (sort === "rating") return (b.rating-a.rating) || a.name.localeCompare(b.name);
+   if (sort === "unvisited") return (Number(a.visited)-Number(b.visited)) || a.name.localeCompare(b.name);
+   if (sort === "visited") return (Number(b.visited)-Number(a.visited)) || a.name.localeCompare(b.name);
+   return a.name.localeCompare(b.name);
+ });
+
+ const visibleIds = new Set(filtered.map(x => String(x.id)));
+ state.forEach(item => {
+   const c = cardFor(item.id);
+   if (c) c.classList.toggle("hidden", !visibleIds.has(String(item.id)));
+ });
+ filtered.forEach(item => {
+   const c = cardFor(item.id);
+   if (c) els.grid.appendChild(c);
+ });
+ els.showing.textContent = "Showing " + filtered.length + " of " + state.length;
+ els.empty.style.display = filtered.length ? "none" : "block";
+ updateStats();
+}
+
+state.forEach(syncCard);
+updateStats();
+applyFilters();
+
+els.grid.addEventListener("change", function(e) {
+ const card = e.target.closest(".card");
+ if (!card) return;
+ const item = state.find(x => String(x.id) === card.dataset.cardId);
+ if (!item) return;
+ if (e.target.classList.contains("visited-box")) {
+   item.visited = e.target.checked;
+   save(); syncCard(item); applyFilters();
+ }
+ if (e.target.classList.contains("rating-input")) {
+   item.rating = Number(e.target.value) || 0;
+   if (item.rating > 0) item.visited = true;
+   save(); syncCard(item); updateStats();
+ }
+ if (e.target.tagName === "TEXTAREA") {
+   item.notes = e.target.value;
+   save(); syncCard(item);
+ }
+});
+
+els.grid.addEventListener("input", function(e) {
+ if (e.target.tagName !== "TEXTAREA") return;
+ const card = e.target.closest(".card");
+ const item = state.find(x => String(x.id) === card.dataset.cardId);
+ if (!item) return;
+ item.notes = e.target.value;
+ save();
+});
+
+els.grid.querySelectorAll(".note-btn").forEach(function(btn) {
+ btn.addEventListener("click", function(e) {
+   e.preventDefault();
+   const card = btn.closest(".card");
+   const notes = card.querySelector(".notes");
+   notes.classList.toggle("open");
+ });
+});
+
+[els.search, els.hood, els.cuisine, els.status, els.sort].forEach(el => {
+ el.addEventListener(el === els.search ? "input" : "change", applyFilters);
+});
+
+els.clear.addEventListener("click", function() {
+ els.search.value = ""; els.hood.value = ""; els.cuisine.value = ""; els.status.value = ""; els.sort.value = "az";
+ applyFilters();
+});
+
+els.exportBtn.addEventListener("click", function() {
+ const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement("a");
+ a.href = url; a.download = "west-seattle-restaurant-quest-backup.json";
+ document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+els.importBtn.addEventListener("click", function() { els.file.click(); });
+els.file.addEventListener("change", function() {
+ const f = els.file.files && els.file.files[0];
+ if (!f) return;
+ const reader = new FileReader();
+ reader.onload = function() {
+   try {
+     const incoming = JSON.parse(String(reader.result));
+     if (!Array.isArray(incoming)) throw new Error("Invalid backup");
+     state = DATA.map(item => {
+       const s = incoming.find(x => x && x.name === item.name);
+       return s ? {...item, visited:!!s.visited, rating:Number(s.rating)||0, notes:String(s.notes||"")} : item;
+     });
+     state.forEach(syncCard); save(); applyFilters();
+   } catch (_) {
+     alert("That file does not look like a Restaurant Quest backup.");
+   }
+ };
+ reader.readAsText(f);
+});
+})();
+</script>
+</body></html>
